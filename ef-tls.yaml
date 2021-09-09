@@ -1,0 +1,35 @@
+# https://github.com/istio/istio/issues/28996#issuecomment-743300776
+# Envoy Filter with config to update the Gateway TLS configuration to add crl.
+
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: gateway-tls-crl
+  namespace: istio-system
+spec:
+  workloadSelector:
+    labels:
+      istio: ingressgateway
+  configPatches:
+  - applyTo: FILTER_CHAIN
+    match:
+      context: GATEWAY
+      listener:
+        name: "0.0.0.0_8443"
+        filterChain:
+          filter:
+            name: "envoy.transport_sockets.tls"
+    patch:
+      operation: MERGE
+      value:
+        transport_socket:
+          name: envoy.transport_sockets.tls
+          typed_config:
+            "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+            common_tls_context:
+              tls_params:
+                tls_maximum_protocol_version: TLSv1_3
+              combined_validation_context:
+                default_validation_context:
+                  crl:
+                    filename: "/etc/istio/crl/crl.pem"

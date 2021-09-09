@@ -1,0 +1,3 @@
+V	310904203807Z		00	cacert.pem	/O=example.com/CN=example.com/emailAddress=admin@example.com
+R	220906203844Z	210906203925Z	01	newcerts/user-foo@01/crt.pem	/C=01/O=example.com/CN=user-foo/emailAddress=user-foo@example.com
+V	220906203849Z		02	newcerts/user-bar@02/crt.pem	/C=02/O=example.com/CN=user-bar/emailAddress=user-bar@example.com

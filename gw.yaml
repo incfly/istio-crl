@@ -1,0 +1,59 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: mygateway
+  namespace: default
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - hosts:
+    - httpbin.example.com
+    port:
+      name: https
+      number: 443
+      protocol: HTTPS
+    tls:
+      credentialName: httpbin-credential-3
+      mode: MUTUAL
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: direct-cnn-through-egress-gateway
+  namespace: default
+spec:
+  gateways:
+  - mesh
+  - istio-egressgateway
+  hosts:
+  # - edition.cnn.com
+  - "*.com"
+  tls:
+  - match:
+    - gateways:
+      - mesh
+      port: 443
+      sniHosts:
+      - "*.com"
+      # - edition.cnn.com
+    route:
+    - destination:
+        host: istio-egressgateway.istio-system.svc.cluster.local
+        port:
+          number: 443
+        subset: cnn
+  - match:
+    - gateways:
+      - istio-egressgateway
+      port: 443
+      sniHosts:
+      - "*.com"
+      # - edition.cnn.com
+    route:
+    - destination:
+        host: "*.com"
+        # host: edition.cnn.com
+        port:
+          number: 443
+      weight: 100
