@@ -4,6 +4,8 @@ This repo contains a full E2E instructions of how to enable Certificate
 Revocation List (CRL) on Istio ingress gateway. Specifically, we want to demo
 that Ingress gateway would reject a client with a revoked certificate.
 
+WIP: https://github.com/envoyproxy/envoy/pull/18289, needs to get intermediate working.
+
 ## Setup
 
 1. Install Istio with versions equal or greater than 1.9.5. This contains a fix that we need to
