@@ -29,6 +29,7 @@ https cert for httpbin.example.com.
     ./5-update-crl.sh
     ```
 
+
 1. Configure the ingress gateway with gateway and VirtualService Resources.
 
     ```shell
@@ -38,6 +39,9 @@ https cert for httpbin.example.com.
       --from-file=ca.crt=./cert/ca.crt
     kubectl create configmap envoy-crl -nistio-system \
       --from-file=openssl-selfsign/cert/crl.pem
+    
+    # Edit the ingress gateway with the config map volume and mount.
+
     ka ./gw.yaml
     ka ./ef-tls.yaml
     ```
@@ -82,3 +86,47 @@ curl: (56) OpenSSL SSL_read: error:14094414:SSL routines:ssl3_read_bytes:sslv3 a
 
 - Istio guide of setup mTLS with ingress gateway, https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress/
 - Openssl library we used for generate CRL, https://github.com/felix021/openssl-selfsign
+
+
+## Hands on notes.
+
+### How to Modify Envoy
+
+
+1. special mount the host folder when using build with container output.
+
+```diff
+diff --git a/common/scripts/run.sh b/common/scripts/run.sh
+index 558682ff56..d82d8ea4f0 100755
+--- a/common/scripts/run.sh
++++ b/common/scripts/run.sh
+@@ -58,6 +58,7 @@ read -ra DOCKER_RUN_OPTIONS <<< "${DOCKER_RUN_OPTIONS:-}"
+     --mount "type=bind,source=${MOUNT_SOURCE},destination=/work,consistency=cached" \
+     --mount "type=volume,source=go,destination=/go,consistency=cached" \
+     --mount "type=volume,source=gocache,destination=/gocache,consistency=cached" \
+-    --mount "type=volume,source=cache,destination=/home/.cache,consistency=cached" \
++    --mount "type=bind,source=/home/fly/workspace/tmp/cache,destination=/home/.cache,consistency=cached" \
++    --mount "type=bind,source=/home/fly/workspace/github.com/envoyproxy/envoy,destination=/home/fly/workspace/github.com/envoyproxy/envoy,consistency=cached" \
+     ${CONDITIONAL_HOST_MOUNTS} \
+     -w "${MOUNT_DEST}" "${IMG}" "$@"
+```
+
+
+1. build with override.
+
+```shell
+BUILD_WITH_CONTAINER=1 BAZEL_BUILD_ARGS='--override_repository=envoy=/home/fly/workspace/github.com/envoyproxy/envoy' make build_envoy
+```
+
+
+1. copy the binary.
+
+```shell
+# Copy to istio/istio/out/release_build/dockerproxyv2 folder and start the build manually.
+cp  ~/workspace/tmp/cache/bazel/_bazel_user/1e0bb3bee2d09d2e4ad3523530d3b40c/execroot/io_istio_proxy/bazel-out/k8-opt/bin/src/envoy/envoy .
+docker build --build-arg proxy_version=istio-proxy:8b173990470e0b1dca1500603f684c15637a898b --build-arg istio_version=1.9-dev --build-arg BASE_VERSION=1.9-dev.13 --build-arg SIDECAR=envoy --build-arg BASE_DISTRIBUTION=default -t gcr.io/jianfeih-test-321318/proxyv2:istio19-crl -f Dockerfile.proxyv2 .
+```
+
+### How generate CRL
+
+TODO: write it up from istio-1.9.3 and tweak intermediate stuff.

@@ -14,7 +14,7 @@ spec:
       number: 443
       protocol: HTTPS
     tls:
-      credentialName: httpbin-credential-3
+      credentialName: httpbin-credential-1
       mode: MUTUAL
 ---
 apiVersion: networking.istio.io/v1beta1
